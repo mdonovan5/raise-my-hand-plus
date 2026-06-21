@@ -104,3 +104,12 @@
     transform: rotate(0deg);
   }
 }
+
+/* FORK: keep the raised-hand icon visible next to long player names */
+.player-name:has(> .raise-my-hand-indicator) {
+  display: flex;
+  align-items: center;
+}
+.player-name > .raise-my-hand-indicator {
+  flex: 0 0 auto;
+}
