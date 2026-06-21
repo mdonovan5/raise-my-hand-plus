@@ -105,11 +105,8 @@
   }
 }
 
-/* FORK: keep the raised-hand icon visible next to long player names */
-.player-name:has(> .raise-my-hand-indicator) {
-  display: flex;
-  align-items: center;
-}
-.player-name > .raise-my-hand-indicator {
+/* FORK: hand icon sits in the row beside the name, like the benny count */
+.player[data-user-id] > .raise-my-hand-indicator {
   flex: 0 0 auto;
+  margin-left: 0.4em;
 }

@@ -43,7 +43,7 @@ export function isHandRaised(userId, handSettings) {
   // Check for player list icon (only if playerList mode is enabled)
   if (notificationModes.has("playerList")) {
     const playerName = document.querySelector(`[data-user-id="${userId}"] > .player-name`);
-    if (playerName?.querySelector('.raise-my-hand-indicator')) return true;
+    if (playerName?.parentElement?.querySelector('.raise-my-hand-indicator')) return true;
   }
 
   // Check for active popout (only if popout mode is enabled)
@@ -77,8 +77,12 @@ export function appendPlayerListIcon(id) {
   const playerName = document.querySelector(`[data-user-id="${id}"] > .player-name`);
   if (!playerName) return;
 
+  // FORK: the icon lives in the row (the <li>), as a sibling of .player-name,
+  // exactly like .bennies-count — so it never gets clipped by the name's ellipsis.
+  const row = playerName.parentElement;
+
   // Remove existing icon if present (to restart animation)
-  const existingIcon = playerName.querySelector('.raise-my-hand-indicator');
+  const existingIcon = row.querySelector('.raise-my-hand-indicator');
   if (existingIcon) {
     // Clear any pending timeout
     if (existingIcon.dataset.timeoutId) {
@@ -97,7 +101,7 @@ export function appendPlayerListIcon(id) {
     className: 'raise-my-hand-indicator fas fa-hand-paper fade-in waving'
   });
   icon.dataset.userId = id;
-  playerName.appendChild(icon);
+  playerName.after(icon); // FORK: insert into the row, right after the name
 
   // In non-toggle mode, fade-out and remove after animation + holdTime completes
   if (!isToggleMode) {
@@ -106,7 +110,7 @@ export function appendPlayerListIcon(id) {
 
     const timeoutId = setTimeout(() => {
       // Check if icon still exists and hasn't been manually removed
-      const stillExists = playerName.querySelector(`.raise-my-hand-indicator[data-user-id="${id}"]`);
+      const stillExists = row.querySelector(`.raise-my-hand-indicator[data-user-id="${id}"]`);
       if (stillExists === icon) {
         // Remove waving, add fade-out
         icon.classList.remove('fade-in', 'waving');
@@ -133,7 +137,7 @@ export function appendPlayerListIcon(id) {
  */
 export function removePlayerListIcon(id) {
   raisedHands.delete(id);
-  const icon = document.querySelector(`[data-user-id="${id}"] > .player-name > .raise-my-hand-indicator`);
+  const icon = document.querySelector(`[data-user-id="${id}"] > .raise-my-hand-indicator`);
   if (icon) {
     // Clear any pending timeout
     if (icon.dataset.timeoutId) {
@@ -155,7 +159,7 @@ export function removePlayerListIcon(id) {
  */
 export function clearPlayerListIcons() {
   raisedHands.clear();
-  document.querySelectorAll(`.player-name > .raise-my-hand-indicator`).forEach(icon => {
+  document.querySelectorAll(`.player[data-user-id] > .raise-my-hand-indicator`).forEach(icon => {
     // Clear any pending timeout
     if (icon.dataset.timeoutId) {
       clearTimeout(parseInt(icon.dataset.timeoutId));
@@ -282,11 +286,13 @@ export function refreshPlayerListIcons() {
 
   for (const id of raisedHands) {
     const playerName = document.querySelector(`[data-user-id="${id}"] > .player-name`);
-    if (!playerName || playerName.querySelector('.raise-my-hand-indicator')) continue;
+    if (!playerName) continue;
+    const row = playerName.parentElement;
+    if (row.querySelector('.raise-my-hand-indicator')) continue;
     const icon = Object.assign(document.createElement('span'), {
       className: 'raise-my-hand-indicator fas fa-hand-paper' // static, no animation classes
     });
     icon.dataset.userId = id;
-    playerName.appendChild(icon);
+    playerName.after(icon); // FORK: insert into the row, right after the name
   }
 }
