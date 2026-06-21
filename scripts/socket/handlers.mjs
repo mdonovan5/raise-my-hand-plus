@@ -17,6 +17,13 @@ const FADE_DURATION = 200;  // 0.2s fade-in/fade-out
 const WAVE_DURATION = 1750; // 1.75s waving animation
 
 /**
+ * FORK: client-side set of user IDs with a raised hand, so icons can be
+ * re-applied after the players panel re-renders (which wipes injected DOM).
+ * @type {Set<string>}
+ */
+const raisedHands = new Set();
+
+/**
  * Track the single hand-raised popout instance and the user ID that raised the hand.
  * @type {{popout: NotificationPopout, id: string}|null}
  * @private
@@ -66,6 +73,7 @@ export function createUiNotification(name, permanent) {
  * @returns {void}
  */
 export function appendPlayerListIcon(id) {
+  raisedHands.add(id); // FORK: remember raised state across re-renders
   const playerName = document.querySelector(`[data-user-id="${id}"] > .player-name`);
   if (!playerName) return;
 
@@ -103,6 +111,7 @@ export function appendPlayerListIcon(id) {
         // Remove waving, add fade-out
         icon.classList.remove('fade-in', 'waving');
         icon.classList.add('fade-out');
+		raisedHands.delete(id);
 
         // Remove after fade-out completes
         setTimeout(() => {
@@ -123,6 +132,7 @@ export function appendPlayerListIcon(id) {
  * @returns {void}
  */
 export function removePlayerListIcon(id) {
+  raisedHands.delete(id);
   const icon = document.querySelector(`[data-user-id="${id}"] > .player-name > .raise-my-hand-indicator`);
   if (icon) {
     // Clear any pending timeout
@@ -144,6 +154,7 @@ export function removePlayerListIcon(id) {
  * @returns {void}
  */
 export function clearPlayerListIcons() {
+  raisedHands.clear();
   document.querySelectorAll(`.player-name > .raise-my-hand-indicator`).forEach(icon => {
     // Clear any pending timeout
     if (icon.dataset.timeoutId) {
@@ -257,4 +268,25 @@ export async function createXCardPopout(id) {
   }
 
   await Promise.all(promises);
+}
+
+/**
+ * FORK: re-apply icons for all currently-raised hands. Called on players-panel
+ * render, since re-rendering wipes the imperatively-injected DOM. Adds a STATIC
+ * icon (no fade-in/waving) so frequent re-renders don't re-trigger the animation.
+ * @returns {void}
+ */
+export function refreshPlayerListIcons() {
+  const handSettings = game.settings.get(MODULE_ID, "handSettings");
+  if (!handSettings.general.notificationModes.has("playerList")) return;
+
+  for (const id of raisedHands) {
+    const playerName = document.querySelector(`[data-user-id="${id}"] > .player-name`);
+    if (!playerName || playerName.querySelector('.raise-my-hand-indicator')) continue;
+    const icon = Object.assign(document.createElement('span'), {
+      className: 'raise-my-hand-indicator fas fa-hand-paper' // static, no animation classes
+    });
+    icon.dataset.userId = id;
+    playerName.appendChild(icon);
+  }
 }

@@ -9,7 +9,7 @@ import { default as XCardConfig } from "./applications/settings/xcard-config.mjs
 import HandSettingsData from "./data/settings/HandSettingsData.mjs";
 import XCardSettingsData from "./data/settings/XCardSettingsData.mjs";
 import { initSocket, getSocket } from "./socket/socket.mjs";
-import { clearPlayerListIcons } from "./socket/handlers.mjs";
+import { clearPlayerListIcons, refreshPlayerListIcons } from "./socket/handlers.mjs";
 import { registerTokenControls, getLowerHandContextOptions } from "./controls.mjs";
 import { registerHandlebarsHelpers } from "./applications/handlebars.mjs";
 
@@ -30,6 +30,7 @@ Hooks.once("ready", ready); // perform migration of settings if needed
 Hooks.on("getUserContextOptions", getLowerHandContextOptions); // get the context options for the lower hand keybinding
 Hooks.on("getSceneControlButtons", registerTokenControls); // register the token controls
 Hooks.on("clientSettingChanged", clientSettingChanged); // update the controls toolclip when keybindings are changed
+Hooks.on("renderPlayers", refreshPlayerListIcons); // FORK: re-apply hand icons after the player list re-renders
 
 /**
  * Initialize the module.
